@@ -1,0 +1,73 @@
+name: 'AWS Cost to Slack'
+description: 'Analyze AWS costs and post results to Slack'
+author: 'gessy0129'
+
+inputs:
+  aws-region:
+    description: 'AWS region to use'
+    required: true
+    default: 'ap-northeast-1'
+  aws-role-to-assume:
+    description: 'AWS IAM role to assume for accessing AWS Cost Explorer'
+    required: true
+  aws-access-key-id:
+    description: 'AWS access key ID (alternative to role-to-assume)'
+    required: false
+  aws-secret-access-key:
+    description: 'AWS secret access key (alternative to role-to-assume)'
+    required: false
+  slack-application-token:
+    description: 'Slack application token for posting results'
+    required: true
+  slack-channel-id:
+    description: 'Slack channel ID to post results to'
+    required: true
+  account-filter:
+    description: 'Filter accounts by name (comma-separated list)'
+    required: false
+    default: 'prod,stg,dev'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+        cache-dependency-path: ${{ github.action_path }}/scripts/requirements.txt
+
+    - name: Configure AWS credentials with role
+      if: inputs.aws-role-to-assume != ''
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ inputs.aws-role-to-assume }}
+        aws-region: ${{ inputs.aws-region }}
+
+    - name: Configure AWS credentials with access keys
+      if: inputs.aws-access-key-id != '' && inputs.aws-secret-access-key != ''
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ inputs.aws-access-key-id }}
+        aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
+        aws-region: ${{ inputs.aws-region }}
+
+    - name: Install dependencies
+      shell: bash
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r ${{ github.action_path }}/scripts/requirements.txt
+
+    - name: Run cost analysis
+      shell: bash
+      env:
+        SLACK_APPLICATION_TOKEN: ${{ inputs.slack-application-token }}
+        SLACK_CHANNEL_ID: ${{ inputs.slack-channel-id }}
+        ACCOUNT_FILTER: ${{ inputs.account-filter }}
+        AWS_REGION: ${{ inputs.aws-region }}
+      run: |
+        python ${{ github.action_path }}/scripts/cost_analysis.py
+
+branding:
+  icon: 'dollar-sign'
+  color: 'green'

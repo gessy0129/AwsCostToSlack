@@ -1,0 +1,13 @@
+services:
+  scripts:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/var/task
+      - ~/.aws:/root/.aws:ro
+      - ~/.aws/sso/cache:/root/.aws/sso/cache
+    environment:
+      SECRETSMANAGER_SECRET_ARN: ""
+    ports:
+      - 9000:8080
