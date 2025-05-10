@@ -106,7 +106,7 @@ jobs:
 
     steps:
     - name: Analyze AWS costs and post to Slack
-      uses: gessy0129/AWSCostToSlack@v4
+      uses: gessy0129/AWSCostToSlack@main
       with:
         aws-region: ap-northeast-1
         # AWS認証方法1: IAMロールを使用（推奨）

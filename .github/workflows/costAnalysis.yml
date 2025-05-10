@@ -1,9 +1,6 @@
 name: AWS Cost Analysis
 
 on:
-  schedule:
-    # 平日の朝9時に実行（UTC 0時 = JST 9時）
-    - cron: '0 0 * * 1-5'
   workflow_dispatch:
 
 jobs:
