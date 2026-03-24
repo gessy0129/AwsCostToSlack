@@ -2,14 +2,15 @@
 
 AWSの日毎のコストをSlackにPOSTするGitHub Actionです。
 
-This GitHub Action analyzes AWS costs and posts the results to Slack. It creates graphs showing daily costs by service for each AWS account in your organization.
+This GitHub Action analyzes AWS costs and posts the results to Slack. It is designed to run with an IAM Role in the **AWS Organizations management (root) account**. It lists all member accounts via the Organizations API, filters them by the `account-filter` input, and creates daily cost graphs for each matching account.
 
 ## Features
 
-- Retrieves cost data from AWS Cost Explorer
-- Creates graphs showing daily costs by service
-- Posts results to Slack with cost summary
-- Filters accounts by name
+- Runs against AWS Organizations management account to aggregate costs across member accounts
+- Filters accounts by name using `account-filter` (e.g., `prod,stg,dev`)
+- Retrieves cost data from AWS Cost Explorer (last 7 days)
+- Creates stacked bar graphs showing daily costs by service
+- Posts results to Slack with cost summary per account
 - Runs on a schedule or manually
 
 ## Prerequisites
