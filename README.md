@@ -18,16 +18,19 @@ This GitHub Action analyzes AWS costs and posts the results to Slack. It creates
    - `organizations:ListAccounts`
    - `ce:GetCostAndUsage`
 
-2. Slack application with the following permissions:
-   - `files:write`
-   - `chat:write`
+2. Slack application with the following Bot Token Scopes:
+   - `files:write` — ファイルアップロード用
+   - `files:read` — ファイル共有完了用
+   - `chat:write` — メッセージ投稿用
+
+3. Slack Appを投稿先チャンネルに招待済みであること（下記「4. Slack Appをチャンネルに招待」参照）
 
 ## Setup
 
 ### 1. Create a Slack App
 
 1. Go to [Slack API](https://api.slack.com/apps) and create a new app
-2. Add the `files:write` and `chat:write` permissions
+2. Add the `files:write`, `files:read`, `chat:write` permissions
 3. Install the app to your workspace
 4. Copy the Bot User OAuth Token (starts with `xoxb-`)
 
@@ -83,6 +86,15 @@ Add the following secrets to your GitHub repository:
 - `AWS_ROLE_TO_ASSUME`: The ARN of the IAM role created above
 - `SLACK_APPLICATION_TOKEN`: The Slack Bot User OAuth Token
 - `SLACK_CHANNEL_ID`: The ID of the Slack channel to post to
+
+### 4. Slack Appをチャンネルに招待
+
+Slack Appが投稿先チャンネルのメンバーでないと `not_in_channel` エラーになります。
+投稿先チャンネルのメッセージ入力欄で以下のコマンドを実行してください：
+
+```
+/invite @アプリ名
+```
 
 ## Usage
 
