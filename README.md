@@ -2,14 +2,15 @@
 
 AWSの日毎のコストをSlackにPOSTするGitHub Actionです。
 
-This GitHub Action analyzes AWS costs and posts the results to Slack. It creates graphs showing daily costs by service for each AWS account in your organization.
+This GitHub Action analyzes AWS costs and posts the results to Slack. It is designed to run with an IAM Role in the **AWS Organizations management (root) account**. It lists all member accounts via the Organizations API, filters them by the `account-filter` input, and creates daily cost graphs for each matching account.
 
 ## Features
 
-- Retrieves cost data from AWS Cost Explorer
-- Creates graphs showing daily costs by service
-- Posts results to Slack with cost summary
-- Filters accounts by name
+- Runs against AWS Organizations management account to aggregate costs across member accounts
+- Filters accounts by name using `account-filter` (e.g., `prod,stg,dev`)
+- Retrieves cost data from AWS Cost Explorer (last 7 days)
+- Creates stacked bar graphs showing daily costs by service
+- Posts results to Slack with cost summary per account
 - Runs on a schedule or manually
 
 ## Prerequisites
@@ -18,16 +19,19 @@ This GitHub Action analyzes AWS costs and posts the results to Slack. It creates
    - `organizations:ListAccounts`
    - `ce:GetCostAndUsage`
 
-2. Slack application with the following permissions:
-   - `files:write`
-   - `chat:write`
+2. Slack application with the following Bot Token Scopes:
+   - `files:write` — for uploading files
+   - `files:read` — for completing file uploads
+   - `chat:write` — for posting messages
+
+3. The Slack App must be invited to the target channel (see "4. Invite Slack App to Channel" below)
 
 ## Setup
 
 ### 1. Create a Slack App
 
 1. Go to [Slack API](https://api.slack.com/apps) and create a new app
-2. Add the `files:write` and `chat:write` permissions
+2. Add the `files:write`, `files:read`, `chat:write` permissions
 3. Install the app to your workspace
 4. Copy the Bot User OAuth Token (starts with `xoxb-`)
 
@@ -83,6 +87,15 @@ Add the following secrets to your GitHub repository:
 - `AWS_ROLE_TO_ASSUME`: The ARN of the IAM role created above
 - `SLACK_APPLICATION_TOKEN`: The Slack Bot User OAuth Token
 - `SLACK_CHANNEL_ID`: The ID of the Slack channel to post to
+
+### 4. Invite Slack App to Channel
+
+The Slack App must be a member of the target channel, otherwise you will get a `not_in_channel` error.
+Run the following command in the target channel:
+
+```
+/invite @YourAppName
+```
 
 ## Usage
 
