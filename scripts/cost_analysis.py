@@ -14,31 +14,52 @@ logger.setLevel(INFO)
 
 def post_slack(data, start, end):
     # Slackにコストデータを投稿する
-    file_name="aws_cost.png"
+    token = os.environ.get("SLACK_APPLICATION_TOKEN")
+    channel_id = os.environ.get("SLACK_CHANNEL_ID")
+    file_name = "aws_cost.png"
     file_data = open(data["GraphPath"], 'rb').read()
-    files = {
-        "file": (file_name, file_data, "image/png"),
-    }
-    data = {
-        "token": os.environ.get("SLACK_APPLICATION_TOKEN"),
-        "channels": os.environ.get("SLACK_CHANNEL_ID"),
-        "filename": file_name,
-        "filetype": "png",
-        "initial_comment": f"アカウント名: {data['AccountName']} ({data['AccountId']}) \n{start} ~ {end} の料金\n直近7日間のトータルコスト${data['TotalCost']}"
-    }
+    headers = {"Authorization": f"Bearer {token}"}
 
-    post_message_url = "https://slack.com/api/files.upload"
-    response = requests.post(
-        post_message_url,
-        data=data,
-        files=files,
+    # Step 1: アップロードURLを取得
+    response = requests.get(
+        "https://slack.com/api/files.getUploadURLExternal",
+        headers=headers,
+        params={"filename": file_name, "length": len(file_data)},
     )
+    result = response.json()
+    if not result.get("ok"):
+        print(f"Error getting upload URL: {result.get('error')}")
+        return
 
-    # レスポンスのステータスコードと内容をログに記録
+    upload_url = result["upload_url"]
+    file_id = result["file_id"]
+
+    # Step 2: ファイルをアップロード
+    response = requests.post(upload_url, files={"file": (file_name, file_data, "image/png")})
     if response.status_code != 200:
-        print(f"Error posting to Slack: {response.status_code}, {response.text}")
+        print(f"Error uploading file: {response.status_code}, {response.text}")
+        return
+
+    # Step 3: アップロードを完了し、チャンネルに共有
+    comment = (
+        f"アカウント名: {data['AccountName']} ({data['AccountId']}) \n"
+        f"{start} ~ {end} の料金\n"
+        f"直近7日間のトータルコスト${data['TotalCost']}"
+    )
+    response = requests.post(
+        "https://slack.com/api/files.completeUploadExternal",
+        headers={**headers, "Content-Type": "application/json"},
+        json={
+            "files": [{"id": file_id, "title": file_name}],
+            "channel_id": channel_id,
+            "initial_comment": comment,
+        },
+    )
+    result = response.json()
+    if not result.get("ok"):
+        print(f"Error completing upload: {result.get('error')}")
     else:
-        print("Successfully posted to Slack")
+        print(f"Successfully posted to Slack: {data['AccountName']}")
 
 def make_dataframe(cost_data):
     # AWS Cost Explorer の実行結果をpandaのdataframeの形式に加工する
