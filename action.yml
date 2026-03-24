@@ -23,9 +23,13 @@ inputs:
     description: 'Slack channel ID to post results to'
     required: true
   account-filter:
-    description: 'Filter accounts by name (comma-separated list)'
+    description: 'Filter accounts by name (comma-separated list, partial match)'
     required: false
     default: 'prod,stg,dev'
+  service-filter:
+    description: 'Always include these services in the graph (comma-separated list, partial match). These services are guaranteed to appear even if their cost is low.'
+    required: false
+    default: ''
 
 runs:
   using: 'composite'
@@ -62,6 +66,7 @@ runs:
         SLACK_APPLICATION_TOKEN: ${{ inputs.slack-application-token }}
         SLACK_CHANNEL_ID: ${{ inputs.slack-channel-id }}
         ACCOUNT_FILTER: ${{ inputs.account-filter }}
+        SERVICE_FILTER: ${{ inputs.service-filter }}
         AWS_REGION: ${{ inputs.aws-region }}
       run: |
         python ${{ github.action_path }}/scripts/cost_analysis.py
