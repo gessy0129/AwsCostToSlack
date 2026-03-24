@@ -91,8 +91,24 @@ def make_dataframe(cost_data):
         dataframe[date] = service_amount
 
     # 合計値が高い順にソートし、Top9を出す(残り1はOtherで合算)
+    # service-filterで指定されたサービスは必ずTop枠に含める(部分一致)
     dataframe['Total'] = dict(sorted(dataframe['Total'].items(), key=lambda total: total[1], reverse=True))
-    top_services = list(dataframe['Total'].keys())[0:9]
+
+    service_filter_raw = os.environ.get("SERVICE_FILTER", "")
+    service_filter_terms = [t.strip() for t in service_filter_raw.split(",") if t.strip()]
+
+    pinned_services = []
+    if service_filter_terms:
+        for service_name in dataframe['Total'].keys():
+            if service_name == 'Other':
+                continue
+            if any(term in service_name for term in service_filter_terms):
+                pinned_services.append(service_name)
+
+    # pinned + コスト順で残り枠を埋めてTop9を構成
+    remaining_slots = 9 - len(pinned_services)
+    top_by_cost = [s for s in dataframe['Total'].keys() if s not in pinned_services and s != 'Other']
+    top_services = pinned_services + top_by_cost[:remaining_slots]
 
     for service in list(dataframe['Total'].keys()):
         if service not in top_services and service != 'Other':
